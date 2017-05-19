@@ -9,7 +9,12 @@ def projectName = "YARG (Yet another report generator)"
 def projectDescription = "Open source library for report generation. Provided by Haulmont."
 def projectUrl = "https://github.com/cuba-platform/yarg"
 
-def artifactVersion = '1.1-SNAPSHOT'
+//#ARGUS-BEGIN#
+//def artifactVersion = '1.1-SNAPSHOT'
+def artifactVersion = '1.1.10-ARGUS'
+//#ARGUS-END#
+
+
 if (rootProject.hasProperty('buildVersion')) {
     artifactVersion = rootProject['buildVersion']
 }
@@ -18,19 +23,30 @@ def isSnapshot = artifactVersion.endsWith('-SNAPSHOT')
 def api = project(':yarg-api')
 def core = project(':yarg')
 
-def repositoryUser = System.getenv('HAULMONT_REPOSITORY_USER')
-def repositoryPassword, repositoryUrl, workRepositoryUrl;
+//#ARGUS-BEGIN#
 
-if (repositoryUser) {//for internal users
-    repositoryPassword = System.getenv('HAULMONT_REPOSITORY_PASSWORD')
-    repositoryUrl = 'http://repository.haulmont.com:8587/nexus/content'
-    workRepositoryUrl = "$repositoryUrl/groups/work"
-} else {//for external users
-    repositoryUser = 'cuba'
-    repositoryPassword = 'cuba123'
-    repositoryUrl = 'https://repo.cuba-platform.com/content'
-    workRepositoryUrl = "$repositoryUrl/groups/work"
-}
+//def repositoryUser = System.getenv('HAULMONT_REPOSITORY_USER')
+//def repositoryPassword, repositoryUrl, workRepositoryUrl;
+//if (repositoryUser) {//for internal users
+//    repositoryPassword = System.getenv('HAULMONT_REPOSITORY_PASSWORD')
+//    repositoryUrl = 'http://repository.haulmont.com:8587/nexus/content'
+//    workRepositoryUrl = "$repositoryUrl/groups/work"
+//} else {//for external users
+//    repositoryUser = 'cuba'
+//    repositoryPassword = 'cuba123'
+//    repositoryUrl = 'https://repo.cuba-platform.com/content'
+//    workRepositoryUrl = "$repositoryUrl/groups/work"
+//}
+
+def repositoryUser = ""
+def repositoryPassword = ""
+def repositoryUrl = isSnapshot ? "http://git:8081/artifactory/libs-snapshot-local/" : "http://git:8081/artifactory/libs-release-local/"
+
+def workRepositoryUrl = "http://repository.haulmont.com:8587/nexus/content/groups/work"
+def workRepositoryUser = 'cuba'
+def workRepositoryPassword = 'cuba123'
+
+//#ARGUS-END#
 
 configure([api, core]) {
     apply(plugin: 'maven')
@@ -43,8 +59,14 @@ configure([api, core]) {
         mavenCentral()
         maven {
             credentials {
-                username repositoryUser
-                password repositoryPassword
+                //#ARGUS-BEGIN#
+                // username repositoryUser
+                // password repositoryPassword
+
+                username workRepositoryUser
+                password workRepositoryPassword
+
+                //#ARGUS-END#
             }
             url workRepositoryUrl
         }
@@ -104,9 +126,14 @@ configure([api, core]) {
 //                authentication(userName: "$oss_login", password:  "$oss_password")
 //            }
 
-            repository(url: "$repositoryUrl/repositories/" + (isSnapshot ? 'snapshots' : 'releases')) {
+            //#ARGUS-BEGIN#
+            //repository(url: "$repositoryUrl/repositories/" + (isSnapshot ? 'snapshots' : 'releases')) {
+            //    authentication(userName: repositoryUser, password: repositoryPassword)
+            //}
+            repository(url: repositoryUrl) {
                 authentication(userName: repositoryUser, password: repositoryPassword)
             }
+            //#ARGUS-END#
 
             pom.project {
                 name = "$projectName"
